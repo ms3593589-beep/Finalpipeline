@@ -1,0 +1,123 @@
+[
+  {
+    "name": "Makar Sankranti & Pongal",
+    "slug": "makar-sankranti",
+    "dates": {
+      "2026": "2026-01-14",
+      "2027": "2027-01-14"
+    },
+    "theme": "Harvest, Sun worship, and soaring colorful kites",
+    "tags": ["makarsankranti", "pongal", "harvestfestival", "uttarayan", "kitesofindia"],
+    "style_lock": "Luminous golden sunlight, vibrant flying kites over rustic rooftops, earthen pots overflowing with milk and rice, warm brass accents, neo-traditional Indian folk art aesthetic"
+  },
+  {
+    "name": "Maha Shivratri",
+    "slug": "maha-shivratri",
+    "dates": {
+      "2026": "2026-02-15",
+      "2027": "2027-03-06"
+    },
+    "theme": "The Great Night of Shiva, cosmic meditation, and devotion",
+    "tags": ["mahashivratri", "shiva", "harharmahadev", "omnamahshivaya", "cosmicshiva"],
+    "style_lock": "Deep midnight indigo and glowing celestial teal, ethereal smoke, sacred bilva leaves, glowing crescent moon, trident silhouette, tranquil transcendent cosmic atmosphere"
+  },
+  {
+    "name": "Holi",
+    "slug": "holi",
+    "dates": {
+      "2026": "2026-03-04",
+      "2027": "2027-03-22"
+    },
+    "theme": "The Festival of Colors, joy, spring arrival, and love",
+    "tags": ["holi", "festivalofcolors", "happyholi", "rangbarse", "springinindia"],
+    "style_lock": "Explosions of fine ultramarine, saffron, magenta, and turquoise herbal gulal powder, dynamic dust clouds catching sunlight, exuberant celebration, classical Braj courtyard setting"
+  },
+  {
+    "name": "Eid ul-Fitr",
+    "slug": "eid-ul-fitr",
+    "dates": {
+      "2026": "2026-03-20",
+      "2027": "2027-03-10"
+    },
+    "theme": "Feast of breaking the fast, unity, gratitude, and community",
+    "tags": ["eidmubarak", "eidulfitr", "celebration", "festivevibes", "harmony"],
+    "style_lock": "Luminescent crescent moon in emerald night sky, ornate Mughal arches with delicate filigree, warm lantern glow, intricate geometric Arabesque patterns, serene and festive"
+  },
+  {
+    "name": "Raksha Bandhan",
+    "slug": "raksha-bandhan",
+    "dates": {
+      "2026": "2026-08-28",
+      "2027": "2027-08-17"
+    },
+    "theme": "Sacred bond of sibling love and protective devotion",
+    "tags": ["rakshabandhan", "rakhi", "siblinglove", "indianfestivals", "tradition"],
+    "style_lock": "Silken crimson and golden threads, handcrafted floral rakhi amulets, glowing brass thali with kumkum and rice, warm intimate home atmosphere, intricate zardozi textures"
+  },
+  {
+    "name": "Krishna Janmashtami",
+    "slug": "krishna-janmashtami",
+    "dates": {
+      "2026": "2026-09-04",
+      "2027": "2027-08-25"
+    },
+    "theme": "Birth of Sri Krishna, divine playfulness, and Dahi Handi",
+    "tags": ["janmashtami", "krishna", "radhekrishna", "dahihandi", "divinelove"],
+    "style_lock": "Peacock feather iridescence, glowing midnight rainstorm, sacred Yamuna riverbank, golden earthen butter pot, soft divine flute glow, celestial miniature painting aesthetic"
+  },
+  {
+    "name": "Ganesh Chaturthi",
+    "slug": "ganesh-chaturthi",
+    "dates": {
+      "2026": "2026-09-14",
+      "2027": "2027-09-04"
+    },
+    "theme": "Arrival of Lord Ganesha, remover of obstacles and patron of wisdom",
+    "tags": ["ganeshchaturthi", "ganpatibappamorya", "bappa", "vinayaka", "festiveindia"],
+    "style_lock": "Majestic eco-friendly clay Ganesha idol, marigold orange and vermilion red garlands, glowing modak sweets on banana leaf, rhythmic drum vibration aura, temple courtyard"
+  },
+  {
+    "name": "Navratri & Durga Puja",
+    "slug": "navratri-durga-puja",
+    "dates": {
+      "2026": "2026-10-11",
+      "2027": "2027-09-30"
+    },
+    "theme": "Divine Feminine Shakti, triumph over darkness, and vibrant Garba dance",
+    "tags": ["navratri", "durgapuja", "shakti", "garba", "dandiya", "maadurga"],
+    "style_lock": "Radiant multi-armed warrior Goddess Durga on golden lion, brilliant crimson alta and kumkum, swirl of embroidered chaniya cholis and mirrorwork, dramatic sacred dhunuchi smoke"
+  },
+  {
+    "name": "Dussehra & Vijayadashami",
+    "slug": "dussehra",
+    "dates": {
+      "2026": "2026-10-20",
+      "2027": "2027-10-09"
+    },
+    "theme": "Victory of Dharma and righteousness over evil",
+    "tags": ["dussehra", "vijayadashami", "victoryofgood", "dharma", "ramlila"],
+    "style_lock": "Grand effigies illuminated against twilight sky, fiery golden arrows of light, auspicious Shami tree leaves, majestic royal procession, victorious epic mythological grandeur"
+  },
+  {
+    "name": "Diwali",
+    "slug": "diwali",
+    "dates": {
+      "2026": "2026-11-08",
+      "2027": "2027-10-29"
+    },
+    "theme": "The Grand Festival of Lights, prosperity, and joy",
+    "tags": ["diwali", "festivaloflights", "happydiwali", "deepavali", "shubhkamnaye"],
+    "style_lock": "Thousands of flickering warm clay diyas on carved stone steps, intricate rangoli with marigold flower petals and colored sand, glowing golden fairy lights, auspicious festive splendor"
+  },
+  {
+    "name": "Guru Nanak Jayanti",
+    "slug": "guru-nanak-jayanti",
+    "dates": {
+      "2026": "2026-11-24",
+      "2027": "2027-11-14"
+    },
+    "theme": "Gurpurab, spiritual enlightenment, selfless service, and oneness",
+    "tags": ["gurpurab", "gurunanakjayanti", "waheguru", "goldentemple", "peace"],
+    "style_lock": "Illuminated Golden Temple reflecting in sacred Sarovar waters at dusk, serene floating lamps, tranquil misty night air, saffron and white flags, divine peaceful aura"
+  }
+]
