@@ -14,8 +14,8 @@ class TestDryRunPreview(unittest.TestCase):
         self.coordinator = PipelineCoordinator(dry_run=True)
 
     def test_slide_count_clamp(self):
-        # Test lower clamp (< 2 -> 2)
-        meta_low = self.coordinator.execute(custom_topic="Test Clamping Lower")
+        # Test slide clamping (2 to 10 slides)
+        meta_low = self.coordinator.execute(forced_slot="slot1")
         self.assertGreaterEqual(meta_low["total_slides"], 2)
         self.assertLessEqual(meta_low["total_slides"], 10)
 

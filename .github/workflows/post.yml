@@ -11,11 +11,6 @@ on:
         type: choice
         options: [auto, slot1]
         default: auto
-      custom_topic:
-        description: 'Optional custom topic (Mode B override)'
-        required: false
-        type: string
-        default: ''
       dry_run:
         description: 'Dry run without live publishing'
         required: true
@@ -37,7 +32,6 @@ jobs:
     timeout-minutes: 30
     env:
       FORCED_SLOT: ${{ github.event.inputs.forced_slot || github.event.client_payload.slot || 'auto' }}
-      CUSTOM_TOPIC: ${{ github.event.inputs.custom_topic || github.event.client_payload.topic || '' }}
       DRY_RUN: ${{ github.event.inputs.dry_run || github.event.client_payload.dry_run || 'false' }}
       POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}

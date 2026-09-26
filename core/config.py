@@ -14,8 +14,6 @@ LAST_PROCESSED_ID_FILE = BASE_DIR / "last_processed_id.txt"
 USAGE_FILE = BASE_DIR / "usage.json"
 RUN_STATE_FILE = BASE_DIR / "run_state.json"
 HEARTBEAT_FILE = BASE_DIR / "heartbeat.txt"
-FESTIVALS_FILE = BASE_DIR / "festivals.json"
-EVERGREEN_THEMES_FILE = BASE_DIR / "evergreen_themes.json"
 NEWS_HISTORY_FILE = STATE_DIR / "news_history.json"
 
 # Scheduling & Slots

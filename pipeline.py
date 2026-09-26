@@ -14,13 +14,11 @@ from typing import Dict, Any, List
 
 from core import config
 from core.budget import BudgetGuard
-from core.festivals import FestivalEngine
 from core.news import NewsEngine
 from core.planner import ContentPlanner
 from core.scheduler import PipelineScheduler
 from core.state import StateManager
 from core.telemetry import TelemetryClient
-from core.themes import ThemeManager
 
 from images.cloudflare import CloudflareFluxProvider
 from images.huggingface import HuggingFaceProvider
@@ -105,22 +103,21 @@ class PipelineCoordinator:
     def execute(
         self,
         forced_slot: str = "auto",
-        custom_topic: str = "",
         from_json_path: str = ""
     ) -> Dict[str, Any]:
-        """Main execution flow for all slots and manual overrides."""
+        """Main execution flow for Daily News Edition (Mode N)."""
         job_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex[:6]
-        print(f"\n[IG-PIPELINE] Starting Job: {job_id} (Dry Run: {self.dry_run})")
+        print(f"\n[IG-PIPELINE] Starting Daily News Job: {job_id} (Dry Run: {self.dry_run})")
 
         # 1. Update heartbeat
         if self.state_mgr.check_and_update_heartbeat():
             print("[IG-PIPELINE] Refreshed heartbeat.txt")
 
-        # 2. Determine slot and mode
+        # 2. Determine slot
         resolved_slot = self.scheduler.resolve_slot(forced_slot)
         print(f"[IG-PIPELINE] Resolved Slot: {resolved_slot.upper()}")
 
-        # 3. Content Planning
+        # 3. Content Planning (Mode N: Daily Top News)
         plan = None
         mode = "N"
 
@@ -129,10 +126,6 @@ class PipelineCoordinator:
                 plan = json.load(f)
             mode = plan.get("mode", "N")[0].upper()
             print(f"[IG-PIPELINE] Loaded custom plan from {from_json_path} (Mode {mode})")
-        elif custom_topic:
-            mode = "B"
-            plan = self.planner.plan_topic_carousel(custom_topic)
-            print(f"[IG-PIPELINE] Operating Mode B: Custom Topic '{custom_topic}'")
         else:
             # Check news availability
             if self.dry_run:
@@ -154,18 +147,10 @@ class PipelineCoordinator:
             else:
                 stories = self.news_engine.collect_and_rank_stories()
 
-            story_count = len(stories)
-            mode, context = self.scheduler.determine_mode(resolved_slot, news_story_count=story_count)
-            print(f"[IG-PIPELINE] Operating Mode: {mode}")
-
-            if mode == "N":
-                plan = self.planner.plan_news_edition(stories, edition_name=context.get("edition", "Daily Edition"))
-            elif mode == "C":
-                plan = self.planner.plan_festival_carousel(context["festival"], context["days_diff"])
-            elif mode == "D":
-                plan = self.planner.plan_evergreen_carousel(context["theme"])
-            elif mode == "B":
-                plan = self.planner.plan_topic_carousel(context["topic"])
+            mode, context = self.scheduler.determine_mode(resolved_slot, news_story_count=len(stories))
+            edition_title = context.get("edition", "Daily News Edition")
+            print(f"[IG-PIPELINE] Operating Mode: {mode} ({edition_title})")
+            plan = self.planner.plan_news_edition(stories, edition_name=edition_title)
 
         slides = plan.get("slides", [])
         # Clamp slides strictly between 2 and 10
@@ -359,11 +344,10 @@ class PipelineCoordinator:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Autonomous Instagram Carousel Pipeline")
+    parser = argparse.ArgumentParser(description="Autonomous Instagram Daily News Pipeline (Mode N)")
     parser.add_argument("--dry-run", action="store_true", help="Perform offline execution without network or publishing")
     parser.add_argument("--live-smoke", action="store_true", help="Run live Pollinations smoke test (1 slide, no publish)")
     parser.add_argument("--slot", choices=["auto", "slot1"], default="auto", help="Forced slot execution")
-    parser.add_argument("--topic", type=str, default="", help="Custom topic override (Mode B)")
     parser.add_argument("--from-json", type=str, default="", help="Load pre-scripted plan from JSON")
 
     args = parser.parse_args()
@@ -371,7 +355,6 @@ def main():
     # Check env variables if CLI flag not passed
     dry_run = args.dry_run or os.getenv("DRY_RUN", "false").lower() == "true"
     forced_slot = args.slot if args.slot != "auto" else os.getenv("FORCED_SLOT", "auto")
-    topic = args.topic or os.getenv("CUSTOM_TOPIC", "")
 
     coordinator = PipelineCoordinator(dry_run=dry_run)
 
@@ -380,7 +363,7 @@ def main():
         sys.exit(0 if success else 1)
 
     try:
-        coordinator.execute(forced_slot=forced_slot, custom_topic=topic, from_json_path=args.from_json)
+        coordinator.execute(forced_slot=forced_slot, from_json_path=args.from_json)
     except Exception as e:
         sys.exit(1)
 
