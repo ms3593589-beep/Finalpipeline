@@ -141,7 +141,7 @@ class PipelineCoordinator:
                         "score": 10.0 - i,
                         "is_sensitive": False
                     }
-                    for i in range(8)
+                    for i in range(9)
                 ]
                 stories = mock_news
             else:

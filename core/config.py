@@ -41,6 +41,7 @@ HF_TOKEN = os.getenv("HF_TOKEN", "")
 # Text Models & Vision
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_TEXT_MODEL = os.getenv("GEMINI_TEXT_MODEL", "gemini-3-flash-preview")
+GEMINI_PROMPT_TEMPERATURE = float(os.getenv("GEMINI_PROMPT_TEMPERATURE", "0.4"))
 POLLINATIONS_CHAT_MODEL = os.getenv("POLLINATIONS_CHAT_MODEL", "openai")
 
 # Dimensions & Normalization
@@ -55,7 +56,7 @@ SAFE_MARGIN_Y = 135  # 10% outer margin
 
 # News Configuration
 NEWS_MAX_AGE_HOURS = int(os.getenv("NEWS_MAX_AGE_HOURS", "24"))
-NEWS_MAX_STORIES = 10
+NEWS_MAX_STORIES = 9
 NEWS_MIN_STORIES = 5
 NEWS_MAX_PER_CATEGORY = 3
 

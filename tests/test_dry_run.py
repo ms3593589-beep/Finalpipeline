@@ -28,6 +28,7 @@ class TestDryRunPreview(unittest.TestCase):
 
         # 1. Assert slides exist and match 1080x1350
         slide_count = meta["total_slides"]
+        self.assertEqual(slide_count, 9)
         for idx in range(1, slide_count + 1):
             slide_file = preview_dir / f"slide_{idx}.jpg"
             self.assertTrue(slide_file.exists(), f"Missing {slide_file}")
