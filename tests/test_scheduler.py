@@ -9,30 +9,33 @@ class TestPipelineScheduler(unittest.TestCase):
     def setUp(self):
         self.scheduler = PipelineScheduler()
 
-    def test_slot_selection_by_hour_window(self):
-        # Morning hours (< 8 UTC) -> slot1
+    def test_single_slot_resolution(self):
+        # Always resolves to slot1 across all hours in single-slot mode
         self.assertEqual(self.scheduler.resolve_slot(forced_slot="auto", current_utc_hour=1), "slot1")
-        self.assertEqual(self.scheduler.resolve_slot(forced_slot="auto", current_utc_hour=5), "slot1")
-        self.assertEqual(self.scheduler.resolve_slot(forced_slot="auto", current_utc_hour=7), "slot1")
-
-        # Evening hours (>= 8 UTC) -> slot2
-        self.assertEqual(self.scheduler.resolve_slot(forced_slot="auto", current_utc_hour=8), "slot2")
-        self.assertEqual(self.scheduler.resolve_slot(forced_slot="auto", current_utc_hour=13), "slot2")
-        self.assertEqual(self.scheduler.resolve_slot(forced_slot="auto", current_utc_hour=23), "slot2")
+        self.assertEqual(self.scheduler.resolve_slot(forced_slot="auto", current_utc_hour=8), "slot1")
+        self.assertEqual(self.scheduler.resolve_slot(forced_slot="auto", current_utc_hour=13), "slot1")
+        self.assertEqual(self.scheduler.resolve_slot(forced_slot="auto", current_utc_hour=23), "slot1")
 
         # Forced slot overrides
         self.assertEqual(self.scheduler.resolve_slot(forced_slot="slot1", current_utc_hour=15), "slot1")
-        self.assertEqual(self.scheduler.resolve_slot(forced_slot="slot2", current_utc_hour=2), "slot2")
+        self.assertEqual(self.scheduler.resolve_slot(forced_slot="daily", current_utc_hour=2), "slot1")
 
-    def test_insufficient_news_stories_triggers_mode_d_fallback(self):
-        # In slot 1 with only 3 stories (< NEWS_MIN_STORIES = 5)
-        mode, context = self.scheduler.determine_mode(slot="slot1", news_story_count=3)
-        self.assertEqual(mode, "D")
-        self.assertIn("theme", context)
+    def test_mode_determination_and_fallback(self):
+        # 1. Custom topic -> Mode B
+        mode_b, ctx_b = self.scheduler.determine_mode(custom_topic="Sacred Rivers")
+        self.assertEqual(mode_b, "B")
+        self.assertEqual(ctx_b["topic"], "Sacred Rivers")
 
-        # In slot 1 with 8 stories (>= 5) -> Mode N
-        mode, context = self.scheduler.determine_mode(slot="slot1", news_story_count=8)
-        self.assertEqual(mode, "N")
+        # 2. News with >= 5 stories (no active festival on a non-festival date)
+        # Using a date far from festivals (e.g. 2026-06-15)
+        non_fest_date = datetime(2026, 6, 15, 1, 30, tzinfo=timezone.utc)
+        mode_n, ctx_n = self.scheduler.determine_mode(news_story_count=8, now=non_fest_date)
+        self.assertEqual(mode_n, "N")
+
+        # 3. News with < 5 stories -> Mode D fallback
+        mode_d, ctx_d = self.scheduler.determine_mode(news_story_count=3, now=non_fest_date)
+        self.assertEqual(mode_d, "D")
+        self.assertIn("theme", ctx_d)
 
 
 if __name__ == "__main__":

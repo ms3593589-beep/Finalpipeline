@@ -3,14 +3,13 @@ name: instagram-pipeline
 on:
   schedule:
     - cron: '30 1 * * *'    # 01:30 UTC / 07:00 IST, Morning News
-    - cron: '30 13 * * *'   # 13:30 UTC / 19:00 IST, Festival or Evening News
   workflow_dispatch:
     inputs:
       forced_slot:
-        description: 'Slot override (auto, slot1, slot2)'
+        description: 'Slot override (auto, slot1)'
         required: true
         type: choice
-        options: [auto, slot1, slot2]
+        options: [auto, slot1]
         default: auto
       custom_topic:
         description: 'Optional custom topic (Mode B override)'

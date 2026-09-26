@@ -359,10 +359,10 @@ class PipelineCoordinator:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Autonomous Instagram Dual-Slot Carousel Pipeline")
+    parser = argparse.ArgumentParser(description="Autonomous Instagram Carousel Pipeline")
     parser.add_argument("--dry-run", action="store_true", help="Perform offline execution without network or publishing")
     parser.add_argument("--live-smoke", action="store_true", help="Run live Pollinations smoke test (1 slide, no publish)")
-    parser.add_argument("--slot", choices=["auto", "slot1", "slot2"], default="auto", help="Forced slot execution")
+    parser.add_argument("--slot", choices=["auto", "slot1"], default="auto", help="Forced slot execution")
     parser.add_argument("--topic", type=str, default="", help="Custom topic override (Mode B)")
     parser.add_argument("--from-json", type=str, default="", help="Load pre-scripted plan from JSON")
 

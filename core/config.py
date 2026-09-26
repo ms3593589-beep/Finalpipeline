@@ -19,10 +19,8 @@ EVERGREEN_THEMES_FILE = BASE_DIR / "evergreen_themes.json"
 NEWS_HISTORY_FILE = STATE_DIR / "news_history.json"
 
 # Scheduling & Slots
-SLOT1_HOUR = int(os.getenv("SLOT1_HOUR", "1"))      # 01:30 UTC / 07:00 IST (Morning)
-SLOT2_HOUR = int(os.getenv("SLOT2_HOUR", "13"))     # 13:30 UTC / 19:00 IST (Evening)
-SLOT2_FALLBACK = os.getenv("SLOT2_FALLBACK", "news") # "news" or "evergreen"
-FORCE_SLOT = os.getenv("FORCED_SLOT", "auto").lower() # "auto", "slot1", "slot2"
+SLOT1_HOUR = int(os.getenv("SLOT1_HOUR", "1"))      # 01:30 UTC / 07:00 IST (Morning Daily Edition)
+FORCE_SLOT = os.getenv("FORCED_SLOT", "auto").lower() # "auto", "slot1"
 
 # Image Generation Providers
 POLLINATIONS_API_KEY = os.getenv("POLLINATIONS_API_KEY", "")
