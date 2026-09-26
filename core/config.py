@@ -70,18 +70,8 @@ SENSITIVE_KEYWORDS = [
 ]
 
 NEWS_FEEDS = [
-    # Google News RSS (India edition)
-    {"name": "Google News India", "url": "https://news.google.com/rss?hl=en-IN&gl=IN&ceid=IN:en", "category": "Top"},
-    {"name": "Google News National", "url": "https://news.google.com/rss/headlines/section/topic/NATION?hl=en-IN&gl=IN&ceid=IN:en", "category": "India"},
-    {"name": "Google News Business", "url": "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=en-IN&gl=IN&ceid=IN:en", "category": "Business"},
-    {"name": "Google News Technology", "url": "https://news.google.com/rss/headlines/section/topic/TECHNOLOGY?hl=en-IN&gl=IN&ceid=IN:en", "category": "Technology"},
-    {"name": "Google News Sports", "url": "https://news.google.com/rss/headlines/section/topic/SPORTS?hl=en-IN&gl=IN&ceid=IN:en", "category": "Sports"},
-    # Publisher Direct RSS Feeds
-    {"name": "The Hindu", "url": "https://www.thehindu.com/news/national/feeder/default.rss", "category": "India"},
-    {"name": "Indian Express", "url": "https://indianexpress.com/section/india/feed/", "category": "India"},
-    {"name": "Hindustan Times", "url": "https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml", "category": "India"},
-    {"name": "NDTV", "url": "https://feeds.feedburner.com/ndtvnews-india-news", "category": "India"},
-    {"name": "Times of India", "url": "https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms", "category": "Top"}
+    # Google News (India Top Stories)
+    {"name": "Google News", "url": "https://news.google.com/rss?hl=en-IN&gl=IN&ceid=IN:en", "category": "Top News"}
 ]
 
 # Caption & Hashtag Pyramid

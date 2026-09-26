@@ -38,6 +38,15 @@ class NewsEngine:
                 title = re.sub(r"<[^>]+>", "", title)
                 desc = re.sub(r"<[^>]+>", "", desc)
 
+                # Extract original publisher name from <source> tag or trailing title
+                source_name = item.findtext("source", "").strip() or feed_info["name"]
+                if " - " in title:
+                    parts = title.rsplit(" - ", 1)
+                    if len(parts) == 2 and len(parts[1]) < 35:
+                        title = parts[0].strip()
+                        if source_name == feed_info["name"]:
+                            source_name = parts[1].strip()
+
                 pub_time = self._parse_pub_date(pub_date_str)
                 if title:
                     items.append({
@@ -45,8 +54,8 @@ class NewsEngine:
                         "description": desc,
                         "pub_time": pub_time,
                         "link": link,
-                        "source": feed_info["name"],
-                        "category": feed_info.get("category", "Top")
+                        "source": source_name,
+                        "category": feed_info.get("category", "Top News")
                     })
 
             # Handle Atom (<entry>...)
