@@ -166,13 +166,11 @@ class PipelineCoordinator:
         if self.telemetry.bot_token and self.telemetry.chat_id:
             prompts_to_send = [
                 {
-                    "category": s.get("category", "NEWS"),
-                    "title": s.get("title", ""),
-                    "summary": s.get("body", ""),
-                    "sources": s.get("sources", ""),
-                    "visual_prompt": s.get("image_prompt", "")
+                    "slide_index": s.get("slide_index", idx + 1),
+                    "formatted_index": f"{idx + 1:02d}",
+                    "raw_prompt": s.get("image_prompt") or s.get("visual_prompt") or s.get("prompt", "")
                 }
-                for s in slides
+                for idx, s in enumerate(slides)
             ]
             sent_prompts = self.telemetry.send_headlight_prompts(prompts_to_send)
             print(f"[IG-PIPELINE] Dispatched {sent_prompts}/{len(prompts_to_send)} copyable prompt blocks to Telegram")
