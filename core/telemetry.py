@@ -99,3 +99,27 @@ class TelemetryClient:
             f"<pre>{clean_trace}</pre>"
         )
         return self.send_message(msg, parse_mode="HTML")
+
+    def send_headlight_prompts(self, prompts: list) -> int:
+        """Dispatches the 9 @HEADLIGHTNEWS prompts to Telegram with 1-tap copyable blocks."""
+        if not self.bot_token or not self.chat_id:
+            return 0
+
+        header_msg = (
+            f"<b>📲 @HEADLIGHTNEWS PIPELINE — {len(prompts)} PROMPTS GENERATED</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━\n"
+            f"Tap on any prompt block below to copy it with 1 tap, then paste into Midjourney, Flux, or Ideogram.\n\n"
+            f"<i>Drop all {len(prompts)} generated images back into this chat when done!</i>"
+        )
+        self.send_message(header_msg, parse_mode="HTML")
+
+        sent_count = 0
+        for p in prompts:
+            slide_idx = p.get("formatted_index", f"{p.get('slide_index', 1):02d}")
+            raw_prompt = p.get("raw_prompt", "")
+            msg = f"<b>SLIDE {slide_idx} / {len(prompts):02d} — PROMPT</b>\n<pre>{raw_prompt}</pre>"
+            if self.send_message(msg, parse_mode="HTML"):
+                sent_count += 1
+
+        return sent_count
+

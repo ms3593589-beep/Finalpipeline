@@ -212,8 +212,12 @@ class PipelineCoordinator:
             # Normalize to 1080x1350
             norm_img = self.normalizer.normalize(img)
 
-            # Apply overlay typography
-            final_img = self.overlay_renderer.render_overlay(norm_img, slide_info)
+            # Apply overlay typography (Disabled permanently unless ENABLE_TYPOGRAPHY_OVERLAY is True)
+            if getattr(config, "ENABLE_TYPOGRAPHY_OVERLAY", False):
+                final_img = self.overlay_renderer.render_overlay(norm_img, slide_info)
+            else:
+                final_img = norm_img
+
 
             # Save slide JPEG
             slide_file = target_dir / f"slide_{slide_idx}.jpg"
@@ -228,14 +232,15 @@ class PipelineCoordinator:
             })
             print(f"  [OK] Rendered slide {slide_idx}/{total_slides} [{used_provider_name.upper()}]")
 
-        # 7. Companion Story Generation
-        # Open first slide for story
-        from PIL import Image
-        with Image.open(rendered_slide_paths[0]) as s1:
-            story_img = self.story_gen.generate_story(s1)
-            story_file = target_dir / "story.jpg"
-            story_img.save(story_file, format="JPEG", quality=92)
-        print(f"  [OK] Companion story generated (1080x1920)")
+        # 7. Companion Story Generation (Disabled permanently unless ENABLE_STORY_GENERATION is true)
+        story_file = None
+        if getattr(config, "ENABLE_STORY_GENERATION", False):
+            from PIL import Image
+            with Image.open(rendered_slide_paths[0]) as s1:
+                story_img = self.story_gen.generate_story(s1)
+                story_file = target_dir / "story.jpg"
+                story_img.save(story_file, format="JPEG", quality=92)
+            print(f"  [OK] Companion story generated (1080x1920)")
 
         # 8. Caption Generation
         hook = f"TOP INDIA NEWS BRIEFING"
@@ -297,9 +302,8 @@ class PipelineCoordinator:
                     raise RuntimeError(f"Failed to stage slide {idx + 1} to Cloudinary")
                 child_urls.append(url)
 
-            story_url = stager.upload_story(str(story_file), job_id)
-            if not story_url:
-                raise RuntimeError("Failed to stage story to Cloudinary")
+            if story_file and getattr(config, "ENABLE_STORY_GENERATION", False):
+                story_url = stager.upload_story(str(story_file), job_id)
 
             # Check idempotency: publish carousel only if not already published
             if not run_state.get("carousel_published"):
@@ -315,8 +319,8 @@ class PipelineCoordinator:
                 self.state_mgr.record_published(carousel_id)
                 print(f"[IG-PIPELINE] Carousel published successfully: {carousel_id}")
 
-            # Publish companion story
-            if not run_state.get("story_published"):
+            # Publish companion story (only if enabled)
+            if getattr(config, "ENABLE_STORY_GENERATION", False) and story_file and not run_state.get("story_published"):
                 print("[IG-PIPELINE] Publishing companion story...")
                 story_id = meta.publish_story(story_url)
                 self.state_mgr.update_run_state(stage="story_published", story_published=True)

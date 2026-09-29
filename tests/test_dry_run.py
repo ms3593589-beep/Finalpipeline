@@ -36,12 +36,15 @@ class TestDryRunPreview(unittest.TestCase):
                 self.assertEqual(img.size, (1080, 1350))
                 self.assertEqual(img.mode, "RGB")
 
-        # 2. Assert story exists and matches 1080x1920
+        # 2. Assert story is not created when ENABLE_STORY_GENERATION is False
         story_file = preview_dir / "story.jpg"
-        self.assertTrue(story_file.exists())
-        with Image.open(story_file) as img:
-            self.assertEqual(img.size, (1080, 1920))
-            self.assertEqual(img.mode, "RGB")
+        if getattr(config, "ENABLE_STORY_GENERATION", False):
+            self.assertTrue(story_file.exists())
+            with Image.open(story_file) as img:
+                self.assertEqual(img.size, (1080, 1920))
+                self.assertEqual(img.mode, "RGB")
+        else:
+            self.assertFalse(story_file.exists())
 
         # 3. Assert caption.txt exists and is <= 2200 chars
         caption_file = preview_dir / "caption.txt"

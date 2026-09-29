@@ -23,6 +23,7 @@ class CloudinaryStager:
             import cloudinary
             import cloudinary.uploader
             
+            cloudinary.config(cloudinary_url=config.CLOUDINARY_URL)
             public_id = f"igpipe/{job_id}/slide_{slide_index}"
             resp = cloudinary.uploader.upload(
                 image_path,
@@ -44,6 +45,7 @@ class CloudinaryStager:
             import cloudinary
             import cloudinary.uploader
             
+            cloudinary.config(cloudinary_url=config.CLOUDINARY_URL)
             public_id = f"igpipe/{job_id}/story"
             resp = cloudinary.uploader.upload(
                 image_path,
@@ -56,30 +58,67 @@ class CloudinaryStager:
         except Exception:
             return None
 
-    def cleanup_all(self, job_id: str):
-        """Deletes all staged images under the job's folder in Cloudinary."""
+    def cleanup_expired_assets(self, retention_days: int = getattr(config, "CLEANUP_RETENTION_DAYS", 7)) -> int:
+        """Deletes Cloudinary assets older than the specified retention window (default 7 days)."""
         if not self.is_available():
-            return
+            return 0
 
+        deleted_count = 0
         try:
+            import datetime
             import cloudinary
             import cloudinary.api
             import cloudinary.uploader
 
-            # Destroy tracked public IDs
-            for pid in self.uploaded_public_ids:
-                try:
-                    cloudinary.uploader.destroy(pid)
-                except Exception:
-                    pass
+            cloudinary.config(cloudinary_url=config.CLOUDINARY_URL)
+            cutoff_date = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=retention_days)
 
-            # Safety net: delete folder prefix
-            try:
-                cloudinary.api.delete_resources_by_prefix(f"igpipe/{job_id}/")
-            except Exception:
-                pass
+            # Retrieve resources under the igpipe prefix
+            result = cloudinary.api.resources(type="upload", prefix="igpipe/", max_results=500)
+            resources = result.get("resources", [])
 
+            for res in resources:
+                created_at_str = res.get("created_at")
+                if created_at_str:
+                    # Cloudinary format: ISO 8601 string, e.g. 2026-09-27T11:20:00Z
+                    created_at = datetime.datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+                    if created_at < cutoff_date:
+                        pid = res.get("public_id")
+                        cloudinary.uploader.destroy(pid)
+                        deleted_count += 1
         except Exception:
             pass
-        finally:
+
+        return deleted_count
+
+    def cleanup_all(self, job_id: str, force_immediate: bool = False):
+        """Deletes staged images. If force_immediate is False, runs 7-day retention cleanup."""
+        if not self.is_available():
+            return
+
+        if force_immediate:
+            try:
+                import cloudinary
+                import cloudinary.api
+                import cloudinary.uploader
+
+                cloudinary.config(cloudinary_url=config.CLOUDINARY_URL)
+                for pid in self.uploaded_public_ids:
+                    try:
+                        cloudinary.uploader.destroy(pid)
+                    except Exception:
+                        pass
+
+                try:
+                    cloudinary.api.delete_resources_by_prefix(f"igpipe/{job_id}/")
+                except Exception:
+                    pass
+            except Exception:
+                pass
+            finally:
+                self.uploaded_public_ids.clear()
+        else:
+            # Keep images for 7 days by default, cleaning up older expired assets
+            self.cleanup_expired_assets(retention_days=getattr(config, "CLEANUP_RETENTION_DAYS", 7))
             self.uploaded_public_ids.clear()
+

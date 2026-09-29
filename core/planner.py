@@ -255,3 +255,177 @@ class ContentPlanner:
             "stories": clustered_stories[:total_slides]
         }
 
+    def _call_gemini_text(self, prompt: str, temperature: float = 0.35) -> Optional[str]:
+        """Calls Google Gemini API for free-form formatted text generation."""
+        if not config.GEMINI_API_KEY:
+            return None
+        try:
+            import requests
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{config.GEMINI_TEXT_MODEL}:generateContent"
+            headers = {
+                "Content-Type": "application/json",
+                "x-goog-api-key": config.GEMINI_API_KEY
+            }
+            body = {
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {
+                    "temperature": temperature
+                }
+            }
+            resp = requests.post(url, headers=headers, json=body, timeout=30)
+            if resp.status_code == 200:
+                data = resp.json()
+                candidates = data.get("candidates", [])
+                if candidates:
+                    return candidates[0]["content"]["parts"][0]["text"]
+        except Exception:
+            pass
+        return None
+
+    def build_headlight_prompt(self, candidates: List[Dict[str, Any]], target_count: int = 9) -> str:
+        """Constructs prompt using the exact user-specified @HEADLIGHTNEWS template."""
+        now = datetime.now(timezone.utc)
+        date_str = now.strftime("%A, %d %B %Y")
+
+        news_items = []
+        for idx, c in enumerate(candidates):
+            news_items.append({
+                "id": idx,
+                "title": c.get("representative_title", ""),
+                "description": c.get("description", ""),
+                "category": c.get("category", "Top"),
+                "is_sensitive": c.get("is_sensitive", False)
+            })
+
+        return (
+            f'You are an expert news editor and AI prompt engineer for "@HEADLIGHTNEWS".\n\n'
+            f'TODAY\'S DATE: {date_str}\n\n'
+            f'TASK:\n'
+            f'1. Review today\'s candidate news stories below and identify the top {target_count} national and global news stories across diverse categories (Nation, Economy, Tech, World, Sports).\n'
+            f'2. For each of the {target_count} stories (numbered 01 to {target_count:02d}), convert it into our exact standardized vertical infographic prompt for text-to-image generators (Midjourney, Flux, Ideogram).\n\n'
+            f'STRICT TEMPLATE FORMAT FOR EVERY STORY (Do not alter the skeleton):\n\n'
+            f'Headline Section:\n'
+            f'A professional breaking news vertical infographic. At the top left, neat black uppercase text displaying today\'s date: "{date_str.upper()}". At the top right, a black triple chevron icon (>>>).\n\n'
+            f'Dynamic Text:\n'
+            f'Large, bold black uppercase typography reading: "[INSERT GENERATED BIG HEADLINE]".\n'
+            f'Directly below the headline, a solid bright red horizontal rectangular box containing white bold uppercase text: "[INSERT GENERATED RED BADGE KEYWORD]".\n'
+            f'Below the red box, smaller black body text with exact spelling: "[INSERT GENERATED STORY DETAILS SUMMARY]".\n\n'
+            f'Dynamic Image:\n'
+            f'In the center, a soft, smooth white-to-fog fade transitions into the main photograph below. The photograph is a [INSERT GENERATED 3-PART PHOTO SCENE].\n\n'
+            f'Footer Section:\n'
+            f'At the bottom left, a clean red square badge with white number "[TWO DIGIT INDEX: 01 to {target_count:02d}]". At the bottom right, white bold text handle: "@HEADLIGHTNEWS".\n\n'
+            f'RULES FOR INSERTS:\n'
+            f'- [BIG HEADLINE]: Bold, strictly UPPERCASE, punchy (maximum 10–12 words).\n'
+            f'- [RED BADGE KEYWORD]: 1–3 words in UPPERCASE (e.g., POLICY SHIFT, BREAKING UPDATE, DIPLOMACY, MEDAL HAUL).\n'
+            f'- [STORY DETAILS SUMMARY]: Exactly 1 concise, factual sentence. CRITICAL: Do NOT invent or hallucinate any numbers or metrics not present in the source.\n'
+            f'- [3-PART PHOTO SCENE]:\n'
+            f'  * Part 1 (Subject & Action): Tangible real-world human subjects, vehicles, or physical objects performing an action. (Avoid metaphors, floating icons, or abstract concepts).\n'
+            f'  * Part 2 (Setting & Background): Concrete, realistic environment (e.g., podium in a summit hall, flood-hit paved street, high-tech server racks).\n'
+            f'  * Part 3 (Visual Tone Anchor): Always append verbatim: "dramatic photojournalistic style, low atmospheric lighting, editorial documentary framing, 35mm depth of field".\n\n'
+            f'Emit all {target_count} prompts sequentially, separated by a horizontal line (---).\n\n'
+            f'TODAY\'S CANDIDATE STORIES FROM GOOGLE NEWS:\n'
+            f'{json.dumps(news_items, ensure_ascii=False)}'
+        )
+
+    def parse_headlight_blocks(self, raw_text: str, candidates: List[Dict[str, Any]], target_count: int = 9) -> List[Dict[str, Any]]:
+        """Parses the @HEADLIGHTNEWS sequential prompt output separated by '---'."""
+        blocks = [b.strip() for b in raw_text.split("---") if b.strip()]
+        results = []
+
+        for idx, block in enumerate(blocks[:target_count]):
+            slide_idx = idx + 1
+            if "Footer Section:" not in block:
+                block = block.rstrip() + f'\n\nFooter Section:\nAt the bottom left, a clean red square badge with white number "{slide_idx:02d}". At the bottom right, white bold text handle: "@HEADLIGHTNEWS".'
+
+            headline_match = re.search(r'reading:\s*"([^"]+)"', block, re.IGNORECASE)
+            headline = headline_match.group(1).strip() if headline_match else f"BREAKING NEWS STORY {slide_idx}"
+
+            badge_match = re.search(r'containing white bold uppercase text:\s*"([^"]+)"', block, re.IGNORECASE)
+            badge = badge_match.group(1).strip() if badge_match else "TOP UPDATE"
+
+            summary_match = re.search(r'smaller black body text with exact spelling:\s*"([^"]+)"', block, re.IGNORECASE)
+            summary = summary_match.group(1).strip() if summary_match else headline
+
+            photo_match = re.search(r'The photograph is a\s+(.*?)(?:\.\s*Footer Section|\nFooter Section|Footer Section)', block, re.DOTALL | re.IGNORECASE)
+            photo_scene = photo_match.group(1).strip() if photo_match else ""
+
+            matched_candidate = candidates[idx % len(candidates)] if candidates else {}
+            cand_text = f"{matched_candidate.get('representative_title', '')} {matched_candidate.get('description', '')}"
+            if not self.news_engine.validate_number_guard(summary, cand_text):
+                summary = matched_candidate.get("description") or matched_candidate.get("representative_title", headline)
+
+            results.append({
+                "slide_index": slide_idx,
+                "formatted_index": f"{slide_idx:02d}",
+                "headline": headline,
+                "badge": badge,
+                "summary": summary,
+                "photo_scene": photo_scene,
+                "raw_prompt": block,
+                "handle": "@HEADLIGHTNEWS"
+            })
+
+        return results
+
+    def _plan_headlight_heuristically(self, candidates: List[Dict[str, Any]], target_count: int = 9) -> List[Dict[str, Any]]:
+        """Deterministic heuristic builder matching the exact @HEADLIGHTNEWS template."""
+        now = datetime.now(timezone.utc)
+        date_str = now.strftime("%A, %d %B %Y").upper()
+        results = []
+        for idx in range(min(target_count, len(candidates))):
+            slide_idx = idx + 1
+            c = candidates[idx]
+            rep_title = c.get("representative_title", f"India Breaking News Headline {slide_idx}").upper()
+            desc = c.get("description", rep_title)
+            category = c.get("category", "Top News").upper()
+            badge = category if len(category.split()) <= 3 else "TOP UPDATE"
+
+            anchor = "dramatic photojournalistic style, low atmospheric lighting, editorial documentary framing, 35mm depth of field"
+            scene = f"modern photojournalistic view in India relating to {category.lower()}, realistic subjects and setting, {anchor}"
+
+            block = (
+                f"Headline Section:\n"
+                f"A professional breaking news vertical infographic. At the top left, neat black uppercase text displaying today's date: \"{date_str}\". At the top right, a black triple chevron icon (>>>).\n\n"
+                f"Dynamic Text:\n"
+                f'Large, bold black uppercase typography reading: "{rep_title}".\n'
+                f'Directly below the headline, a solid bright red horizontal rectangular box containing white bold uppercase text: "{badge}".\n'
+                f'Below the red box, smaller black body text with exact spelling: "{desc}".\n\n'
+                f"Dynamic Image:\n"
+                f"In the center, a soft, smooth white-to-fog fade transitions into the main photograph below. The photograph is a {scene}.\n\n"
+                f"Footer Section:\n"
+                f'At the bottom left, a clean red square badge with white number "{slide_idx:02d}". At the bottom right, white bold text handle: "@HEADLIGHTNEWS".'
+            )
+
+            results.append({
+                "slide_index": slide_idx,
+                "formatted_index": f"{slide_idx:02d}",
+                "headline": rep_title,
+                "badge": badge,
+                "summary": desc,
+                "photo_scene": scene,
+                "raw_prompt": block,
+                "handle": "@HEADLIGHTNEWS"
+            })
+        return results
+
+    def plan_headlight_edition(self, candidates: List[Dict[str, Any]], target_count: int = 9) -> List[Dict[str, Any]]:
+        """Generates 9 @HEADLIGHTNEWS prompts using Gemini AI, with fallback."""
+        parsed = []
+        if config.GEMINI_API_KEY:
+            prompt = self.build_headlight_prompt(candidates, target_count=target_count)
+            raw = self._call_gemini_text(prompt)
+            if raw:
+                parsed = self.parse_headlight_blocks(raw, candidates, target_count=target_count)
+
+        if len(parsed) < target_count:
+            heuristic_items = self._plan_headlight_heuristically(candidates, target_count=target_count)
+            for h_item in heuristic_items[len(parsed):target_count]:
+                slide_idx = len(parsed) + 1
+                h_item["slide_index"] = slide_idx
+                h_item["formatted_index"] = f"{slide_idx:02d}"
+                h_item["raw_prompt"] = re.sub(r'white number "\d+"', f'white number "{slide_idx:02d}"', h_item["raw_prompt"])
+                parsed.append(h_item)
+
+        return parsed
+
+

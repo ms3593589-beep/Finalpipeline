@@ -16,6 +16,17 @@ RUN_STATE_FILE = BASE_DIR / "run_state.json"
 HEARTBEAT_FILE = BASE_DIR / "heartbeat.txt"
 NEWS_HISTORY_FILE = STATE_DIR / "news_history.json"
 
+# Load .env file automatically if present
+ENV_FILE = BASE_DIR / ".env"
+if ENV_FILE.exists():
+    with open(ENV_FILE, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                key, val = line.split("=", 1)
+                os.environ.setdefault(key.strip(), val.strip().strip("'\""))
+
+
 # Scheduling & Slots
 SLOT1_HOUR = int(os.getenv("SLOT1_HOUR", "1"))      # 01:30 UTC / 07:00 IST (Morning Daily Edition)
 FORCE_SLOT = os.getenv("FORCED_SLOT", "auto").lower() # "auto", "slot1"
@@ -49,6 +60,9 @@ CAROUSEL_WIDTH = 1080
 CAROUSEL_HEIGHT = 1350
 STORY_WIDTH = 1080
 STORY_HEIGHT = 1920
+ENABLE_STORY_GENERATION = os.getenv("ENABLE_STORY_GENERATION", "false").lower() == "true"
+ENABLE_TYPOGRAPHY_OVERLAY = os.getenv("ENABLE_TYPOGRAPHY_OVERLAY", "false").lower() == "true"
+
 
 # Safe zone margins
 SAFE_MARGIN_X = 108  # 10% outer margin
@@ -88,6 +102,7 @@ BRAND_HANDLE = os.getenv("BRAND_HANDLE", "@YourChannel")
 
 # Cloudinary & Meta
 CLOUDINARY_URL = os.getenv("CLOUDINARY_URL", "")
+CLEANUP_RETENTION_DAYS = int(os.getenv("CLEANUP_RETENTION_DAYS", "7"))
 IG_USER_ID = os.getenv("IG_USER_ID", "")
 IG_ACCESS_TOKEN = os.getenv("IG_ACCESS_TOKEN", "")
 GRAPH_API_VERSION = os.getenv("GRAPH_API_VERSION", "v20.0")

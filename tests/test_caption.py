@@ -49,7 +49,7 @@ class TestCaptionGenerator(unittest.TestCase):
         
         # 2. Assert all structural sections exist
         self.assertIn("🇮🇳 TOP INDIA NEWS TODAY", caption)
-        self.assertIn("Follow @YourChannel", caption)
+        self.assertIn(f"Follow {config.BRAND_HANDLE}", caption)
         self.assertIn("Which story impact surprised you most?", caption)
         self.assertIn("📌 Save this edition", caption)
         self.assertIn("🎨 Imagery: Symbolic editorial AI-generated illustrations.", caption)

@@ -64,7 +64,7 @@ class TestPublisherClients(unittest.TestCase):
         self.stager.configured = True
         self.stager.uploaded_public_ids = ["igpipe/job_1/slide_1", "igpipe/job_1/slide_2"]
 
-        self.stager.cleanup_all("job_1")
+        self.stager.cleanup_all("job_1", force_immediate=True)
 
         # Verify destroy was invoked for each staged asset
         self.assertEqual(mock_destroy.call_count, 2)
