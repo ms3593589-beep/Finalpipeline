@@ -162,6 +162,22 @@ class PipelineCoordinator:
 
         print(f"[IG-PIPELINE] Slides planned: {total_slides}")
 
+        # Dispatch 1-tap copyable prompt blocks to Telegram
+        if self.telemetry.bot_token and self.telemetry.chat_id:
+            prompts_to_send = [
+                {
+                    "category": s.get("category", "NEWS"),
+                    "title": s.get("title", ""),
+                    "summary": s.get("body", ""),
+                    "sources": s.get("sources", ""),
+                    "visual_prompt": s.get("image_prompt", "")
+                }
+                for s in slides
+            ]
+            sent_prompts = self.telemetry.send_headlight_prompts(prompts_to_send)
+            print(f"[IG-PIPELINE] Dispatched {sent_prompts}/{len(prompts_to_send)} copyable prompt blocks to Telegram")
+
+
         # 4. Setup output directory
         target_dir = config.MOCK_PREVIEW_DIR if self.dry_run else (config.BASE_DIR / "output" / job_id)
         if target_dir.exists():
