@@ -42,5 +42,4 @@ scratch/
 *.swo
 
 # Pipeline temporary/local artifacts
-state/telegram_buffer.json
-
+state/news_history.json

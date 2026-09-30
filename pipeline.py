@@ -117,134 +117,126 @@ class PipelineCoordinator:
         resolved_slot = self.scheduler.resolve_slot(forced_slot)
         print(f"[IG-PIPELINE] Resolved Slot: {resolved_slot.upper()}")
 
-        # 3. Content Planning (Mode N: Daily Top News)
-        plan = None
-        mode = "N"
+        # 3. Check for User Telegram Photo Batch
+        from core.telegram_buffer import TelegramBufferManager
+        buf_mgr = TelegramBufferManager()
+        buf_mgr.process_incoming_updates()
+        tg_photos = buf_mgr.get_buffered_photos()
 
-        if from_json_path and Path(from_json_path).exists():
+        if tg_photos:
+            print(f"[IG-PIPELINE] Detected {len(tg_photos)} Telegram photo(s) in active buffer! Processing raw batch...")
+            total_slides = len(tg_photos)
+            slides = [{"slide_index": i+1, "total_slides": total_slides, "title": f"Slide {i+1}", "image_prompt": ""} for i in range(total_slides)]
+            mode = "T"
+        elif from_json_path and Path(from_json_path).exists():
             with open(from_json_path, "r", encoding="utf-8") as f:
                 plan = json.load(f)
-            mode = plan.get("mode", "N")[0].upper()
+            mode = plan.get("mode", "T")[0].upper()
+            slides = plan.get("slides", [])
+            total_slides = max(2, min(len(slides), config.MAX_AI_IMAGES_PER_POST))
+            slides = slides[:total_slides]
             print(f"[IG-PIPELINE] Loaded custom plan from {from_json_path} (Mode {mode})")
+        elif self.dry_run:
+            # Synthetic Telegram Raw Photos for Dry Run Testing
+            print("[IG-PIPELINE] Offline Dry-Run Test: Creating 4 synthetic Telegram raw slide photos...")
+            total_slides = 4
+            from PIL import Image
+            out_dir = config.MOCK_PREVIEW_DIR
+            out_dir.mkdir(parents=True, exist_ok=True)
+            tg_photos = []
+            for i in range(1, 5):
+                p_path = out_dir / f"telegram_raw_slide_{i}.jpg"
+                img = Image.new("RGB", (1080, 1350), color=(30 * i, 60 * i, 90))
+                img.save(p_path, format="JPEG", quality=95)
+                tg_photos.append({"slide_index": i, "raw_path": str(p_path)})
+            slides = [{"slide_index": i+1, "total_slides": total_slides, "title": f"Slide {i+1}", "image_prompt": ""} for i in range(total_slides)]
+            mode = "T"
         else:
-            # Check news availability
-            if self.dry_run:
-                # Mock news items for offline dry-run
-                now_iso = datetime.now(timezone.utc)
-                mock_news = [
-                    {
-                        "representative_title": f"India Unveils Milestone Clean Energy Initiative {i+1}",
-                        "description": f"Comprehensive renewable expansion across states reaches record deployment milestones in 2026.",
-                        "category": "Technology" if i % 2 == 0 else "Business",
-                        "sources": {"The Hindu", "Indian Express"},
-                        "latest_time": now_iso,
-                        "score": 10.0 - i,
-                        "is_sensitive": False
-                    }
-                    for i in range(9)
-                ]
-                stories = mock_news
-            else:
-                stories = self.news_engine.collect_and_rank_stories()
+            msg = "[IG-PIPELINE] No Telegram photos found in active buffer! Mode N (Auto News) is permanently removed.\n[IG-PIPELINE] Please send /start, upload 2-9 photos, and send /end on Telegram to publish."
+            print(msg)
+            self.telemetry.notify_warning("No Telegram Photos Buffered", msg)
+            return {"status": "no_buffered_photos", "total_slides": 0}
 
-            mode, context = self.scheduler.determine_mode(resolved_slot, news_story_count=len(stories))
-            edition_title = context.get("edition", "Daily News Edition")
-            print(f"[IG-PIPELINE] Operating Mode: {mode} ({edition_title})")
-            plan = self.planner.plan_news_edition(stories, edition_name=edition_title)
-
-        slides = plan.get("slides", [])
-        # Clamp slides strictly between 2 and 10
-        total_slides = max(2, min(len(slides), config.MAX_AI_IMAGES_PER_POST))
-        slides = slides[:total_slides]
         for idx, s in enumerate(slides):
             s["slide_index"] = idx + 1
             s["total_slides"] = total_slides
 
         print(f"[IG-PIPELINE] Slides planned: {total_slides}")
 
-        # Dispatch 1-tap copyable prompt blocks to Telegram
-        if self.telemetry.bot_token and self.telemetry.chat_id:
-            prompts_to_send = [
-                {
-                    "slide_index": s.get("slide_index", idx + 1),
-                    "formatted_index": f"{idx + 1:02d}",
-                    "raw_prompt": s.get("image_prompt") or s.get("visual_prompt") or s.get("prompt", "")
-                }
-                for idx, s in enumerate(slides)
-            ]
-            sent_prompts = self.telemetry.send_headlight_prompts(prompts_to_send)
-            print(f"[IG-PIPELINE] Dispatched {sent_prompts}/{len(prompts_to_send)} copyable prompt blocks to Telegram")
-
-
         # 4. Setup output directory
         target_dir = config.MOCK_PREVIEW_DIR if self.dry_run else (config.BASE_DIR / "output" / job_id)
-        if target_dir.exists():
+        if target_dir.exists() and mode != "T":
             shutil.rmtree(target_dir)
         target_dir.mkdir(parents=True, exist_ok=True)
 
         # 5. Budget & Provider Allocation
-        active_model = self.pollinations.discover_active_model()
-        if self.dry_run:
-            # Offline dry-run: all slides render through Pillow
-            ai_allocation = [False] * total_slides
-        else:
-            ai_allocation = self.budget_guard.calculate_slide_allocation(total_slides, active_model)
-
-        providers = self._get_provider_chain()
-        provider_counts: Dict[str, int] = {}
         rendered_slide_paths = []
         slide_metadata = []
+        provider_counts: Dict[str, int] = {}
 
-        # 6. Slide Generation & Rendering Loop
-        for i, slide_info in enumerate(slides):
-            slide_idx = i + 1
-            prompt = slide_info["image_prompt"]
-            seed = int(hashlib.md5(f"{job_id}_{slide_idx}".encode()).hexdigest(), 16) % 10000000
+        if mode == "T":
+            # Direct pass-through for Telegram User Photos
+            provider_counts["telegram_user_photos"] = total_slides
+            for i, p_item in enumerate(tg_photos):
+                slide_idx = i + 1
+                raw_p = Path(p_item.get("raw_path", ""))
+                slide_file = target_dir / f"slide_{slide_idx}.jpg"
+                if raw_p.exists() and raw_p != slide_file:
+                    shutil.copy(str(raw_p), str(slide_file))
+                rendered_slide_paths.append(str(slide_file))
+                slide_metadata.append({"slide_index": slide_idx, "provider": "telegram_raw", "title": f"Slide {slide_idx}"})
+                print(f"  [OK] Processed Telegram Raw Photo {slide_idx}/{total_slides} -> {slide_file.name}")
+        else:
+            active_model = self.pollinations.discover_active_model()
+            ai_allocation = [False] * total_slides if self.dry_run else self.budget_guard.calculate_slide_allocation(total_slides, active_model)
+            providers = self._get_provider_chain()
 
-            use_ai = ai_allocation[i]
-            img = None
-            used_provider_name = "pillow"
+            # 6. Slide Generation & Rendering Loop
+            for i, slide_info in enumerate(slides):
+                slide_idx = i + 1
+                prompt = slide_info["image_prompt"]
+                seed = int(hashlib.md5(f"{job_id}_{slide_idx}".encode()).hexdigest(), 16) % 10000000
 
-            if use_ai and not self.dry_run:
-                for prov in providers:
-                    if prov.name() != "pillow" and prov.is_available():
-                        try:
-                            img = prov.generate(prompt, seed=seed)
-                            if img:
-                                used_provider_name = prov.name()
-                                break
-                        except Exception:
-                            continue
-
-            # Fallback to Pillow
-            if img is None:
-                img = self.pillow_art.generate(prompt, seed=seed)
+                use_ai = ai_allocation[i]
+                img = None
                 used_provider_name = "pillow"
 
-            provider_counts[used_provider_name] = provider_counts.get(used_provider_name, 0) + 1
+                if use_ai and not self.dry_run:
+                    for prov in providers:
+                        if prov.name() != "pillow" and prov.is_available():
+                            try:
+                                img = prov.generate(prompt, seed=seed)
+                                if img:
+                                    used_provider_name = prov.name()
+                                    break
+                            except Exception:
+                                continue
 
-            # Normalize to 1080x1350
-            norm_img = self.normalizer.normalize(img)
+                if img is None:
+                    img = self.pillow_art.generate(prompt, seed=seed)
+                    used_provider_name = "pillow"
 
-            # Apply overlay typography (Disabled permanently unless ENABLE_TYPOGRAPHY_OVERLAY is True)
-            if getattr(config, "ENABLE_TYPOGRAPHY_OVERLAY", False):
-                final_img = self.overlay_renderer.render_overlay(norm_img, slide_info)
-            else:
-                final_img = norm_img
+                provider_counts[used_provider_name] = provider_counts.get(used_provider_name, 0) + 1
+                slide_file = target_dir / f"slide_{slide_idx}.jpg"
+                
+                if getattr(config, "ENABLE_STEP4_PROCESSING", False):
+                    norm_img = self.normalizer.normalize(img)
+                    final_img = self.overlay_renderer.render_overlay(norm_img, slide_info) if getattr(config, "ENABLE_TYPOGRAPHY_OVERLAY", False) else norm_img
+                    self.normalizer.save_optimized_jpeg(final_img, slide_file)
+                else:
+                    if hasattr(img, "save"):
+                        img.save(slide_file, format="JPEG", quality=95)
+                    elif isinstance(img, (str, Path)):
+                        shutil.copy(str(img), str(slide_file))
 
-
-            # Save slide JPEG
-            slide_file = target_dir / f"slide_{slide_idx}.jpg"
-            self.normalizer.save_optimized_jpeg(final_img, slide_file)
-            rendered_slide_paths.append(str(slide_file))
-
-            slide_metadata.append({
-                "slide_index": slide_idx,
-                "provider": used_provider_name,
-                "title": slide_info.get("title", ""),
-                "prompt": prompt
-            })
-            print(f"  [OK] Rendered slide {slide_idx}/{total_slides} [{used_provider_name.upper()}]")
+                rendered_slide_paths.append(str(slide_file))
+                slide_metadata.append({
+                    "slide_index": slide_idx,
+                    "provider": used_provider_name,
+                    "title": slide_info.get("title", ""),
+                    "prompt": prompt
+                })
+                print(f"  [OK] Rendered slide {slide_idx}/{total_slides} [{used_provider_name.upper()}]")
 
         # 7. Companion Story Generation (Disabled permanently unless ENABLE_STORY_GENERATION is true)
         story_file = None
@@ -349,6 +341,8 @@ class PipelineCoordinator:
                 carousel_permalink=permalink,
                 story_id=story_id
             )
+            buf_mgr.clear_buffer()
+            print("[IG-PIPELINE] Cleared Telegram photo buffer.")
 
         except Exception as e:
             err_trace = traceback.format_exc()

@@ -43,8 +43,8 @@ class MetaPublisher:
 
         raise TimeoutError(f"Meta container {container_id} timed out after {max_attempts * interval_s}s")
 
-    def create_carousel_item(self, image_url: str) -> str:
-        """Creates an individual child carousel container."""
+    def create_carousel_item(self, image_url: str, max_retries: int = 3) -> str:
+        """Creates an individual child carousel container with retry logic."""
         import requests
 
         url = f"{self.base_url}/{self.user_id}/media"
@@ -53,13 +53,30 @@ class MetaPublisher:
             "is_carousel_item": "true",
             "access_token": self.access_token
         }
-        resp = requests.post(url, data=payload, timeout=20)
-        if resp.status_code != 200:
-            raise RuntimeError(f"Failed to create carousel child item: {resp.text}")
+        
+        for attempt in range(max_retries):
+            resp = requests.post(url, data=payload, timeout=20)
+            if resp.status_code == 200:
+                res_data = resp.json()
+                if "error" not in res_data and res_data.get("id"):
+                    container_id = res_data.get("id")
+                    self._poll_container_status(container_id)
+                    time.sleep(1.5)  # Gentle delay between item creations to avoid rate limits
+                    return container_id
+                else:
+                    err_msg = str(res_data.get('error'))
+                    print(f"Meta API Warning (attempt {attempt+1}/{max_retries}): {err_msg}")
+                    if "blocked" in err_msg.lower() or "oauthexception" in err_msg.lower():
+                        time.sleep(12.0)  # Wait for Meta rate-limit window to clear
+            
+            # If rate limited or transient error, pause and retry
+            if attempt < max_retries - 1:
+                time.sleep(5.0 * (attempt + 1))
+        
+        raise RuntimeError(f"Failed to create carousel child item: {resp.text}")
 
-        container_id = resp.json().get("id")
-        self._poll_container_status(container_id)
-        return container_id
+
+
 
     def publish_carousel(self, child_container_ids: List[str], caption: str) -> str:
         """

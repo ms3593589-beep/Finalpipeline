@@ -28,13 +28,17 @@ class TestDryRunPreview(unittest.TestCase):
 
         # 1. Assert slides exist and match 1080x1350
         slide_count = meta["total_slides"]
-        self.assertEqual(slide_count, 9)
+        self.assertEqual(slide_count, 4)
         for idx in range(1, slide_count + 1):
             slide_file = preview_dir / f"slide_{idx}.jpg"
             self.assertTrue(slide_file.exists(), f"Missing {slide_file}")
             with Image.open(slide_file) as img:
-                self.assertEqual(img.size, (1080, 1350))
+                if getattr(config, "ENABLE_STEP4_PROCESSING", False):
+                    self.assertEqual(img.size, (1080, 1350))
+                else:
+                    self.assertTrue(img.size[0] > 0 and img.size[1] > 0)
                 self.assertEqual(img.mode, "RGB")
+
 
         # 2. Assert story is not created when ENABLE_STORY_GENERATION is False
         story_file = preview_dir / "story.jpg"
@@ -60,7 +64,7 @@ class TestDryRunPreview(unittest.TestCase):
             data = json.load(f)
             self.assertEqual(data["total_slides"], slide_count)
             self.assertIn("providers", data)
-            self.assertIn("pillow", data["providers"])
+            self.assertIn("telegram_user_photos", data["providers"])
 
 
 if __name__ == "__main__":

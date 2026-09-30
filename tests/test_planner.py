@@ -49,7 +49,7 @@ class TestContentPlanner(unittest.TestCase):
 
         self.assertEqual(len(plan["slides"]), 9)
         self.assertEqual(plan["slides"][0]["category"], "TECH")
-        self.assertTrue(plan["slides"][0]["image_prompt"].endswith(ContentPlanner.ART_DIRECTIVE))
+        self.assertIn("@DEEPBROTHERSNEWS", plan["slides"][0]["image_prompt"])
         self.assertIn("12 sensors", plan["slides"][0]["body"])
 
     @patch("core.planner.ContentPlanner.plan_with_llm")
@@ -90,7 +90,7 @@ class TestContentPlanner(unittest.TestCase):
         for idx, slide in enumerate(plan["slides"]):
             self.assertEqual(slide["slide_index"], idx + 1)
             self.assertEqual(slide["total_slides"], 9)
-            self.assertTrue(slide["image_prompt"].endswith(ContentPlanner.ART_DIRECTIVE))
+            self.assertIn("@DEEPBROTHERSNEWS", slide["image_prompt"])
             self.assertTrue(len(slide["title"]) > 0)
 
 

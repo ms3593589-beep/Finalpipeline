@@ -62,6 +62,8 @@ STORY_WIDTH = 1080
 STORY_HEIGHT = 1920
 ENABLE_STORY_GENERATION = os.getenv("ENABLE_STORY_GENERATION", "false").lower() == "true"
 ENABLE_TYPOGRAPHY_OVERLAY = os.getenv("ENABLE_TYPOGRAPHY_OVERLAY", "false").lower() == "true"
+ENABLE_STEP4_PROCESSING = os.getenv("ENABLE_STEP4_PROCESSING", "false").lower() == "true"
+
 
 
 # Safe zone margins
@@ -107,7 +109,9 @@ IG_USER_ID = os.getenv("IG_USER_ID", "")
 IG_ACCESS_TOKEN = os.getenv("IG_ACCESS_TOKEN", "")
 GRAPH_API_VERSION = os.getenv("GRAPH_API_VERSION", "v20.0")
 
-# Telemetry
+# Telemetry & Admin Alerts
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+TELEGRAM_ADMIN_BOT_TOKEN = os.getenv("TELEGRAM_ADMIN_BOT_TOKEN", TELEGRAM_BOT_TOKEN)
+TELEGRAM_ADMIN_CHAT_ID = os.getenv("TELEGRAM_ADMIN_CHAT_ID", TELEGRAM_CHAT_ID)
 REQUIRE_APPROVAL = os.getenv("REQUIRE_APPROVAL", "false").lower() == "true"

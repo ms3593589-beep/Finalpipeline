@@ -113,8 +113,8 @@ class TelegramBufferManager:
             text = (msg.get("text") or "").strip().lower()
             photos = msg.get("photo", [])
 
-            # 1. Handle Batch Start Command (/new)
-            if text in ["/new", "new"]:
+            # 1. Handle Batch Start Command (/start or /new)
+            if text in ["/start", "start", "/new", "new"]:
                 self._clear_physical_folder()
                 buffered_photos = []
                 buf["buffered_photos"] = buffered_photos
@@ -122,7 +122,7 @@ class TelegramBufferManager:
                 is_active_batch = True
                 ack_msg = (
                     "<b>🆕 Fresh Batch Started!</b>\n"
-                    "Buffer state and physical photo files cleared. Send your images now!\n"
+                    "Buffer state cleared. Send your images now!\n"
                     "Type <code>/end</code> or <code>/done</code> when finished."
                 )
                 self.telemetry.send_message(ack_msg)
@@ -156,7 +156,7 @@ class TelegramBufferManager:
                     # Ignore photos arriving before /new command
                     warn_msg = (
                         "<b>⚠️ No Active Batch!</b>\n"
-                        "Please send <code>/new</code> first to start a fresh batch before sending photos."
+                        "Please send <code>/start</code> first to start a fresh batch before sending photos."
                     )
                     self.telemetry.send_message(warn_msg)
                     continue

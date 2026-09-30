@@ -12,7 +12,36 @@ from core.news import NewsEngine
 class ContentPlanner:
     """Coordinates text generation, slide scripting, and image prompt crafting."""
 
-    ART_DIRECTIVE = ", no text, no letters, no logo, no watermark, centered composition, subject inside the middle 80%"
+    INFOGRAPHIC_MASTER_PROMPT_TEMPLATE = (
+        "A professional breaking news vertical infographic, 9:16 portrait, clean editorial design.\n\n"
+        "TOP LEFT: neat black uppercase text: \"{date_text}\".\n"
+        "TOP RIGHT: a black triple chevron icon (>>>).\n\n"
+        "HEADLINE: large, bold, black, condensed uppercase sans-serif, left-aligned, max 3 lines, reading exactly: \"{headline}\".\n\n"
+        "LABEL: directly below the headline, a solid bright red rectangular box with white bold uppercase text: \"{category}\".\n\n"
+        "BODY TEXT: below the red box, two lines at most of black, medium-weight sans-serif text (about 60% of the headline size, generous line spacing), reading exactly: \"{summary}\". No other body text, no source names, no extra words.\n\n"
+        "PHOTO: below the text, a smooth white-to-fog gradient fade into a full-width photograph. The photograph is: {art_prompt}. Dramatic photojournalistic style, 35mm lens, shallow depth of field, low atmospheric lighting, editorial documentary framing. No readable text, letters, logos or flags in the photo. Keep the photo dark at the bottom so white footer text stays readable.\n\n"
+        "FOOTER: bottom right only, white bold uppercase text: \"@DEEPBROTHERSNEWS\". Nothing else in the footer: no badge, no number, no other shapes.\n\n"
+        "Typography is crisp and correctly spelled, with consistent margins and strong hierarchy: headline, label, body, photo, footer."
+    )
+
+    def format_infographic_prompt(
+        self,
+        headline: str,
+        category: str,
+        summary: str,
+        art_prompt: str,
+        date_text: Optional[str] = None
+    ) -> str:
+        """Formats the master infographic prompt specification with story metadata."""
+        if not date_text:
+            date_text = datetime.now(timezone.utc).strftime("%d %b %Y").upper()
+        return self.INFOGRAPHIC_MASTER_PROMPT_TEMPLATE.format(
+            date_text=date_text,
+            headline=headline,
+            category=category.upper(),
+            summary=summary,
+            art_prompt=art_prompt
+        )
 
     def __init__(self):
         self.news_engine = NewsEngine()
@@ -156,7 +185,12 @@ class ContentPlanner:
                 else:
                     art_prompt = f"Editorial conceptual illustration of {category.lower()} in India: {headline}. Vibrant symbolic aesthetic, contemporary digital art style"
 
-            image_prompt = art_prompt + self.ART_DIRECTIVE
+            image_prompt = self.format_infographic_prompt(
+                headline=headline,
+                category=category,
+                summary=summary,
+                art_prompt=art_prompt
+            )
             sources_str = ", ".join(sorted(orig.get("sources", ["News Wire"])))
 
             parsed_stories.append({
@@ -195,7 +229,12 @@ class ContentPlanner:
             else:
                 base_prompt = f"Editorial conceptual illustration of {category.lower()} in India: {rep_title}. Vibrant symbolic aesthetic, contemporary digital art style"
 
-            image_prompt = base_prompt + self.ART_DIRECTIVE
+            image_prompt = self.format_infographic_prompt(
+                headline=rep_title,
+                category=category,
+                summary=summary,
+                art_prompt=base_prompt
+            )
 
             parsed_stories.append({
                 "title": rep_title,
