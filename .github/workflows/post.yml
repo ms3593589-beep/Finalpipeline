@@ -28,7 +28,7 @@ concurrency:
 
 jobs:
   run:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       FORCED_SLOT: ${{ github.event.inputs.forced_slot || github.event.client_payload.slot || 'auto' }}
