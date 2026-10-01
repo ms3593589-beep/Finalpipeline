@@ -3,6 +3,13 @@
 
 ---
 
+### 🌐 GitHub Repository Links (`Happydemo`)
+- 🏠 **GitHub Repository:** [github.com/ms3593589-beep/Happydemo](https://github.com/ms3593589-beep/Happydemo)
+- ⚡ **GitHub Actions Workflow:** [github.com/ms3593589-beep/Happydemo/actions/workflows/post.yml](https://github.com/ms3593589-beep/Happydemo/actions/workflows/post.yml)
+- 🔑 **GitHub Actions Secrets:** [github.com/ms3593589-beep/Happydemo/settings/secrets/actions](https://github.com/ms3593589-beep/Happydemo/settings/secrets/actions)
+
+---
+
 ## 📌 PART 1: How to Explain This Project to Your Client
 
 ### 1. Elevator Pitch (What to Say)
