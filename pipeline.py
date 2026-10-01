@@ -6,6 +6,7 @@ import json
 import os
 import shutil
 import sys
+import time
 import traceback
 import uuid
 from datetime import datetime, timezone
@@ -107,6 +108,7 @@ class PipelineCoordinator:
     ) -> Dict[str, Any]:
         """Main execution flow for Daily News Edition (Mode N)."""
         job_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex[:6]
+        start_time = time.time()
         print(f"\n[IG-PIPELINE] Starting Daily News Job: {job_id} (Dry Run: {self.dry_run})")
 
         # 1. Update heartbeat
@@ -340,6 +342,12 @@ class PipelineCoordinator:
                 provider_breakdown=provider_counts,
                 carousel_permalink=permalink,
                 story_id=story_id
+            )
+            duration_s = time.time() - start_time
+            self.telemetry.send_daily_api_report(
+                duration_s=duration_s,
+                slides_count=total_slides,
+                status="SUCCESS"
             )
             buf_mgr.clear_buffer()
             print("[IG-PIPELINE] Cleared Telegram photo buffer.")
