@@ -1,12 +1,12 @@
-# 🚀 Autonomous Instagram Carousel Pipeline (`Happydemo`)
+# 🚀 Autonomous Instagram Carousel Pipeline (`Finalpipeline`)
 ## Client Presentation Guide & Operating Manual
 
 ---
 
-### 🌐 GitHub Repository Links (`Happydemo`)
-- 🏠 **GitHub Repository:** [github.com/ms3593589-beep/Happydemo](https://github.com/ms3593589-beep/Happydemo)
-- ⚡ **GitHub Actions Workflow:** [github.com/ms3593589-beep/Happydemo/actions/workflows/post.yml](https://github.com/ms3593589-beep/Happydemo/actions/workflows/post.yml)
-- 🔑 **GitHub Actions Secrets:** [github.com/ms3593589-beep/Happydemo/settings/secrets/actions](https://github.com/ms3593589-beep/Happydemo/settings/secrets/actions)
+### 🌐 GitHub Repository Links (`Finalpipeline`)
+- 🏠 **GitHub Repository:** [github.com/ms3593589-beep/Finalpipeline](https://github.com/ms3593589-beep/Finalpipeline)
+- ⚡ **GitHub Actions Workflow:** [github.com/ms3593589-beep/Finalpipeline/actions/workflows/post.yml](https://github.com/ms3593589-beep/Finalpipeline/actions/workflows/post.yml)
+- 🔑 **GitHub Actions Secrets:** [github.com/ms3593589-beep/Finalpipeline/settings/secrets/actions](https://github.com/ms3593589-beep/Finalpipeline/settings/secrets/actions)
 
 ---
 
@@ -73,7 +73,7 @@ Whenever you want to publish a new post, follow these **3 simple steps**:
 
 ### 🖥️ Step 2: Trigger Workflow on GitHub (Laptop / Browser)
 1. Open your repository actions page:  
-   👉 **[github.com/ms3593589-beep/Happydemo/actions/workflows/post.yml](https://github.com/ms3593589-beep/Happydemo/actions/workflows/post.yml)**
+   👉 **[github.com/ms3593589-beep/Finalpipeline/actions/workflows/post.yml](https://github.com/ms3593589-beep/Finalpipeline/actions/workflows/post.yml)**
 2. Click the **`Run workflow`** dropdown button on the right side.
 3. Keep `🚀 LIVE PUBLISH TO INSTAGRAM` checked.
 4. Click the green **`Run workflow`** button!
@@ -120,7 +120,7 @@ python -m unittest discover tests
 # Check git status
 git status
 
-# Push new changes to Happydemo repository
+# Push new changes to Finalpipeline repository
 git add .
 git commit -m "update: pipeline enhancements"
 git push origin main
@@ -128,7 +128,7 @@ git push origin main
 
 ---
 
-## 🔑 PART 4: Environment Secrets Reference (`Happydemo`)
+## 🔑 PART 4: Environment Secrets Reference (`Finalpipeline`)
 
 These 8 secrets are configured under **Settings** → **Secrets and variables** → **Actions**:
 
