@@ -1,5 +1,6 @@
 """Telegram bot telemetry, alerting, and interactive review."""
 
+import html
 import json
 import re
 from typing import Dict, Any, Optional
@@ -47,8 +48,11 @@ class TelemetryClient:
                 "disable_web_page_preview": False
             }
             resp = requests.post(url, json=payload, timeout=10)
+            if resp.status_code != 200:
+                print(f"[TELEMETRY WARNING] Telegram sendMessage failed ({resp.status_code}): {resp.text}")
             return resp.status_code == 200
-        except Exception:
+        except Exception as e:
+            print(f"[TELEMETRY ERROR] Exception sending Telegram message: {e}")
             return False
 
     def notify_success(
@@ -186,7 +190,7 @@ class TelemetryClient:
         sent_count = 0
         for p in prompts:
             slide_idx = p.get("formatted_index", f"{p.get('slide_index', 1):02d}")
-            raw_prompt = p.get("raw_prompt", "")
+            raw_prompt = html.escape(p.get("raw_prompt", ""))
             msg = f"<b>SLIDE {slide_idx} / {len(prompts):02d} — PROMPT</b>\n<pre>{raw_prompt}</pre>"
             if self.send_message(msg, parse_mode="HTML"):
                 sent_count += 1
