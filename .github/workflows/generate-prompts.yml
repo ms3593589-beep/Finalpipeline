@@ -1,0 +1,46 @@
+name: news-prompt-generator
+
+on:
+  schedule:
+    - cron: '0 1 * * *'    # Daily at 01:00 UTC / 06:30 IST
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run-generator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      TELEGRAM_ADMIN_BOT_TOKEN: ${{ secrets.TELEGRAM_ADMIN_BOT_TOKEN }}
+      TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
+      POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Standalone News & Prompt Generator
+        run: python generate_prompts_cli.py
+
+      - name: Commit pipeline state
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for f in state/news_history.json state/latest_news_plan.json; do
+            [ -f "$f" ] && git add "$f" || true
+          done
+          git diff --cached --quiet || (git commit -m "chore: update news history and plan [skip ci]" && git pull --rebase && git push)
